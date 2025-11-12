@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:monokotil_shop/widgets/left_drawer.dart';
+import 'package:monokotil_shop/screens/newlist_form.dart';
 
 class MyHomePage extends StatelessWidget {
-  MyHomePage({super.key, required ColorScheme colorScheme}); //sudah ada pada code sebelumnya
+  MyHomePage({super.key}); //sudah ada pada code sebelumnya
 
   final String nama = "Rafsanjani"; //nama
   final String npm = "2406495400"; //npm
@@ -33,6 +35,7 @@ class MyHomePage extends StatelessWidget {
             .colorScheme
             .primary,
       ),
+      drawer:  LeftDrawer(),
       // Body halaman dengan padding di sekelilingnya.
       body: Padding(
         padding: const EdgeInsets.all(16.0),
