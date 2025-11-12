@@ -125,3 +125,69 @@ Keduanya adalah fitur yang mempercepat proses *development*, tetapi bekerja deng
     * **State:** **Semua state aplikasi hilang (direset)** ke nilai *default*-nya.
     * **Kapan digunakan?** Saat  membuat perubahan besar yang tidak dapat ditangani oleh *hot reload* (misalnya mengubah data di `initState()`).
 
+# Tugas 8
+
+### 1. Jelaskan perbedaan antara `Navigator.push()` dan `Navigator.pushReplacement()` pada Flutter. Dalam kasus apa sebaiknya masing-masing digunakan pada aplikasi Monokotil Shop saya?
+
+Perbedaan utama terletak pada cara keduanya mengelola tumpukan (stack) navigasi halaman:
+
+* **`Navigator.push()`**
+    * **Cara Kerja:** "Mendorong" atau "menumpuk" halaman baru di atas halaman saat ini. Halaman yang lama (sebelumnya) **tetap ada** di dalam *stack* navigasi.
+    * **Efek:** Pengguna dapat menekan tombol "kembali" (baik di `AppBar` atau tombol fisik perangkat) untuk kembali ke halaman sebelumnya.
+    * **Kasus Penggunaan:** Ideal untuk alur di mana pengguna perlu kembali, seperti:
+        * Dari *list* produk (`MyHomePage`) -> **push** -> ke halaman *detail* produk.
+        * Setelah melihat detail, pengguna bisa "kembali" ke *list* produk.
+
+* **`Navigator.pushReplacement()`**
+    * **Cara Kerja:** "Mengganti" halaman saat ini dengan halaman baru. Halaman yang lama (sebelumnya) **dihapus** dari *stack* navigasi.
+    * **Efek:** Pengguna tidak bisa kembali ke halaman sebelumnya karena halaman tersebut sudah tidak ada di *stack*. Tombol "kembali" di `AppBar` biasanya tidak akan muncul.
+    * **Kasus Penggunaan:** Ideal untuk alur satu arah atau pergantian konteks utama, seperti:
+        * Setelah pengguna berhasil *login*, kita menggunakan `pushReplacement` ke *homepage* agar pengguna tidak bisa "kembali" ke halaman *login*.
+        * **Di aplikasi saya:** Saya menggunakan `pushReplacement` di `LeftDrawer` dan `new_card.dart` untuk berpindah antara `MyHomePage` dan `ShopFormPage`. Ini cocok karena keduanya adalah menu level atas, dan saya tidak ingin pengguna menumpuk halaman-halaman menu.
+
+---
+
+### 2. Bagaimana saya memanfaatkan hierarchy widget seperti `Scaffold`, `AppBar`, dan `Drawer` untuk membangun struktur halaman yang konsisten di seluruh aplikasi?
+
+Saya memanfaatkan hirarki ini dengan menjadikan `Scaffold` sebagai kerangka dasar untuk setiap halaman utama di aplikasi saya.
+
+1.  **`Scaffold` sebagai Kerangka:** Setiap halaman utama, seperti `MyHomePage` dan `ShopFormPage`, dibungkus dengan `Scaffold`. `Scaffold` menyediakan "slot" standar untuk elemen UI umum.
+
+2.  **`AppBar` untuk Konsistensi Judul:** Dengan menempatkan `AppBar` di properti `appBar` milik `Scaffold`, saya mendapatkan bilah judul yang konsisten di bagian atas setiap halaman. Saya dapat memberikan judul yang berbeda untuk setiap halaman (`'Monokotil Shop'` di *home*, `'Form Tambah Produk'` di form) namun dengan gaya visual yang seragam.
+
+3.  **`Drawer` untuk Navigasi Terpusat:** Saya membuat satu widget kustom, `LeftDrawer`, yang berisi semua menu navigasi utama. Kemudian, di setiap `Scaffold` (baik di `MyHomePage` maupun `ShopFormPage`), saya memanggil `const LeftDrawer()` yang sama pada properti `drawer`.
+
+Hasilnya, seluruh aplikasi memiliki struktur yang konsisten: `AppBar` di atas dan menu `Drawer` yang sama di samping, di mana pun pengguna berada.
+
+---
+
+### 3. Dalam konteks desain antarmuka, apa kelebihan menggunakan layout widget seperti `Padding`, `SingleChildScrollView`, dan `ListView` saat menampilkan elemen-elemen form? Berikan contoh penggunaannya dari aplikasi saya.
+
+Widget tata letak ini sangat penting untuk membuat form yang fungsional dan rapi:
+
+* **`Padding`**
+    * **Kelebihan:** Memberikan jarak di sekeliling widget. Tanpa `Padding`, elemen form akan menempel satu sama lain dan menempel di tepi layar, membuatnya terlihat sempit dan sulit dibaca.
+    * **Contoh di Aplikasi Saya:** Di `ShopFormPage`, setiap `TextFormField` (seperti "Nama Produk", "Detail Produk", dll.) saya bungkus dengan `Padding`. Ini memberikan jarak vertikal dan horizontal yang konsisten antar *field*, sehingga form terlihat jauh lebih rapi.
+
+* **`SingleChildScrollView`**
+    * **Kelebihan:** Memastikan konten di dalamnya (dalam hal ini, `Column` yang berisi form) dapat di-*scroll*. Ini adalah keharusan untuk form. Saat pengguna mengetik di *field* bagian bawah, *keyboard* akan muncul dan menutupi sebagian layar. `SingleChildScrollView` memungkinkan pengguna untuk *scroll* ke bawah dan melihat *field* yang sedang mereka isi.
+    * **Contoh di Aplikasi Saya:** Di `ShopFormPage`, saya membungkus `Column` yang berisi semua `Padding` dan `TextFormField` dengan `SingleChildScrollView`. Ini mencegah *overflow error* dan memastikan form tetap dapat digunakan meskipun kontennya lebih panjang dari layar perangkat.
+
+* **`ListView`**
+    * **Kelebihan:** Mirip dengan `SingleChildScrollView`, `ListView` juga menyediakan fungsionalitas *scroll*. Kelebihan utamanya adalah *lazy loading*: `ListView` hanya me-*render* item yang terlihat di layar, sehingga sangat efisien untuk daftar yang *sangat* panjang (ribuan item).
+    * **Contoh di Aplikasi Saya:** Meskipun saya tidak menggunakannya untuk `ShopFormPage` (karena `SingleChildScrollView` + `Column` sudah cukup untuk form yang tidak terlalu panjang), `ListView` adalah widget yang saya gunakan di `LeftDrawer` untuk menampilkan daftar menu navigasi.
+
+---
+
+### 4. Bagaimana saya menyesuaikan warna tema agar aplikasi Monokotil Shop memiliki identitas visual yang konsisten dengan brand toko?
+
+Saya menyesuaikan warna tema secara terpusat di file `lib/main.dart`, di dalam widget `MaterialApp`.
+
+1.  **Pengaturan `ThemeData`:** Di dalam `MaterialApp`, saya menggunakan properti `theme` untuk menentukan `ThemeData` global.
+2.  **Menggunakan `ColorScheme`:** Di dalam `ThemeData`, saya mengatur `colorScheme`. Cara mudah untuk membuat skema warna yang kohesif adalah dengan `ColorScheme.fromSwatch()`.
+3.  **Contoh di Aplikasi Saya:** Saat ini, saya menggunakan `ColorScheme.fromSwatch(primarySwatch: Colors.blue)`. Ini memberi tahu Flutter untuk menghasilkan seluruh palet warna (warna primer, sekunder, aksen, dll.) berdasarkan palet bawaan `Colors.blue`.
+
+**Kelebihan Konsistensi:**
+Dengan mengatur tema di satu tempat ini, semua widget lain di aplikasi seperti `AppBar` atau `ElevatedButton` akan secara otomatis mengambil warna dari `ColorScheme` tersebut.
+
+
