@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:monokotil_shop/screens/menu.dart';
 import 'package:monokotil_shop/main.dart';
 import 'package:monokotil_shop/screens/newlist_form.dart';
+import 'package:monokotil_shop/screens/list_product.dart';
 
 class LeftDrawer extends StatelessWidget {
   const LeftDrawer({super.key});
@@ -54,6 +55,18 @@ class LeftDrawer extends StatelessWidget {
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => const ShopFormPage()),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.list),
+            title: const Text('Daftar Produk'),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ProductListPage(),
+                ),
               );
             },
           ),
