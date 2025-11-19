@@ -1,5 +1,6 @@
 // To parse this JSON data, do
-// final product = productFromJson(jsonString);
+//
+//     final product = productFromJson(jsonString);
 
 import 'dart:convert';
 
@@ -32,14 +33,14 @@ class Product {
 }
 
 class Fields {
-    int user;
+    int? user;
     String name;
     int price;
     String description;
     int stocks;
     int rarity;
     String category;
-    String? thumbnail; 
+    String thumbnail;
     bool isFeatured;
 
     Fields({
@@ -50,7 +51,7 @@ class Fields {
         required this.stocks,
         required this.rarity,
         required this.category,
-        this.thumbnail,
+        required this.thumbnail,
         required this.isFeatured,
     });
 

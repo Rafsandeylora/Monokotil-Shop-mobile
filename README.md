@@ -191,3 +191,74 @@ Saya menyesuaikan warna tema secara terpusat di file `lib/main.dart`, di dalam w
 Dengan mengatur tema di satu tempat ini, semua widget lain di aplikasi seperti `AppBar` atau `ElevatedButton` akan secara otomatis mengambil warna dari `ColorScheme` tersebut.
 
 
+# Tugas 9
+
+### 1. Apakah bisa saya melakukan pengambilan data JSON tanpa membuat model terlebih dahulu? Jika iya, apakah hal tersebut lebih baik daripada membuat model sebelum melakukan pengambilan data JSON?
+
+Ya, saya **bisa** melakukan pengambilan data JSON tanpa membuat model terlebih dahulu. Di Flutter, data JSON yang diterima dari Django dapat langsung diolah sebagai `Map<String, dynamic>` (untuk objek tunggal) atau `List<dynamic>` (untuk array).
+
+Namun, melakukan hal tersebut **tidak lebih baik** daripada menggunakan model, karena:
+* **Keamanan Tipe Data (Type Safety):** Tanpa model, saya harus mengakses data secara manual menggunakan string key (contoh: `data['fields']['price']`). Jika saya salah ketik nama key (misal `data['prices']`), error baru akan muncul saat aplikasi berjalan (*runtime error*). Dengan model `Product` yang sudah saya buat, compiler akan memberitahu jika ada akses properti yang salah sebelum aplikasi dijalankan.
+* **Kemudahan Maintenance:** Jika struktur data dari Django berubah, saya hanya perlu memperbarui file `product.dart`. Tanpa model, saya harus mencari dan mengganti key string di setiap file yang menggunakan data tersebut.
+* **Produktivitas:** Menggunakan model memungkinkan fitur *autocomplete* di IDE, sehingga saya bisa memanggil `product.fields.price` dengan mudah tanpa perlu menghafal struktur JSON mentah.
+
+---
+
+### 2. Sebutkan fungsi dari `CookieRequest` dan jelaskan mengapa instance `CookieRequest` perlu untuk dibagikan ke semua komponen di aplikasi Flutter.
+
+Fungsi utama `CookieRequest` (dari *package* `pbp_django_auth`) adalah untuk menangani permintaan HTTP (GET/POST) ke server Django sembari **menyimpan dan mengelola cookies** secara otomatis. Ini sangat krusial untuk fitur autentikasi, karena Django menggunakan *session cookie* untuk mengenali apakah pengguna sudah login atau belum.
+
+Instance `CookieRequest` perlu dibagikan (*shared*) ke semua komponen aplikasi karena:
+* **Konsistensi Sesi (Session Persistence):** Login yang berhasil akan menghasilkan *session ID* yang disimpan di cookie dalam instance `CookieRequest` tersebut. Jika saya membuat instance `CookieRequest` baru di setiap halaman (misal satu di `LoginPage` dan satu lagi di `ProductPage`), maka instance yang baru tidak akan memiliki cookie dari proses login sebelumnya. Akibatnya, server akan menganggap saya sebagai pengguna anonim (belum login) di halaman baru tersebut.
+* **Implementasi di Monokotil Shop:** Oleh karena itu, saya menginisialisasi `CookieRequest` di `main.dart` menggunakan `Provider`, sehingga satu instance yang sama ("single source of truth") dapat diakses oleh `LoginPage`, `ProductPage`, dan `ShopFormPage`.
+
+---
+
+### 3. Jelaskan mekanisme pengambilan data dari JSON hingga dapat ditampilkan pada Flutter.
+
+Mekanisme yang saya terapkan di halaman `list_product.dart` adalah sebagai berikut:
+
+1.  **Inisialisasi Request:** Saya membuat fungsi asinkronus `fetchProduct()` yang memanggil `request.get('http://127.0.0.1:8000/get-product/')`.
+2.  **Request ke Django:** `CookieRequest` mengirim permintaan HTTP GET ke URL Django.
+3.  **Respon Server:** Django memproses permintaan di `views.py` (fungsi `show_json`) dan mengembalikan data produk dalam format JSON.
+4.  **Decoding & Serialisasi:**
+    * Flutter menerima respon.
+    * Saya melakukan decode JSON menjadi objek Dart.
+    * Saya melakukan iterasi pada data tersebut dan mengubahnya menjadi objek `Product` menggunakan `Product.fromJson(d)` yang telah didefinisikan di model.
+5.  **Menampilkan Data (`FutureBuilder`):**
+    * Saya menggunakan widget `FutureBuilder` untuk memantau status pengambilan data (`waiting`, `hasError`, atau `hasData`).
+    * Saat status `waiting`, saya menampilkan `CircularProgressIndicator`.
+    * Saat data tersedia (`hasData`), `ListView.builder` akan membangun tampilan kartu (`Card`) untuk setiap item `Product` yang berhasil diambil.
+
+---
+
+### 4. Jelaskan mekanisme autentikasi dari input data akun pada Flutter ke Django hingga selesainya proses autentikasi oleh Django dan tampilnya menu pada Flutter.
+
+Proses autentikasi yang terjadi di aplikasi saya adalah:
+
+1.  **Input Data (Flutter):** Di halaman `LoginPage`, saya memasukkan *username* dan *password* ke dalam `TextField`, lalu menekan tombol "Login".
+2.  **Pengiriman Data (Flutter -> Django):** Fungsi `onPressed` pada tombol memanggil `request.login()`, yang mengirimkan data tersebut via HTTP POST ke endpoint Django (`/auth/login/` atau endpoint kustom saya).
+3.  **Validasi (Django):**
+    * Django menerima data di `views.py`.
+    * Fungsi `authenticate(username, password)` dipanggil untuk mengecek kecocokan data dengan database.
+4.  **Pembuatan Sesi (Django):**
+    * Jika valid, fungsi `login(request, user)` dipanggil untuk membuat sesi baru di sisi server.
+    * Django merespons dengan status "success" dan menyertakan *session cookie* di header respons.
+5.  **Penyimpanan Sesi (Flutter):** `CookieRequest` di Flutter menerima respons dan secara otomatis menyimpan cookie tersebut untuk request selanjutnya.
+6.  **Navigasi (Flutter):** Karena `request.loggedIn` bernilai `true`, logika di `LoginPage` saya akan mengarahkan navigasi ke `MyHomePage` menggunakan `Navigator.pushReplacement`.
+
+---
+
+### 5. Sebutkan seluruh widget yang kamu pakai pada tugas ini dan jelaskan fungsinya masing-masing.
+
+Berikut adalah widget utama yang saya gunakan dalam pengembangan integrasi ini:
+
+* **`FutureBuilder`**: Untuk menangani proses *asynchronous* pengambilan data produk. Widget ini memungkinkan saya menampilkan *loading spinner* saat data sedang diambil dan menampilkan daftar produk saat data sudah siap.
+* **`ListView.builder`**: Digunakan di `ProductPage` untuk membuat daftar produk yang dapat di-*scroll*. Widget ini efisien karena hanya merender item yang terlihat di layar.
+* **`Card`**: Digunakan sebagai wadah visual untuk setiap item produk agar terlihat rapi dengan efek bayangan (shadow).
+* **`Image.network`**: Saya gunakan untuk menampilkan *thumbnail* produk langsung dari URL yang disediakan oleh server Django.
+* **`CircularProgressIndicator`**: Indikator visual (loading memutar) yang muncul saat aplikasi sedang menunggu respon dari server (baik saat login maupun ambil data).
+* **`Provider`**: Digunakan di `main.dart` untuk menyuntikkan (*inject*) instance `CookieRequest` ke seluruh pohon widget aplikasi.
+* **`InkWell`**: Saya bungkus `Card` produk dengan ini untuk memberikan efek riak air (*ripple effect*) saat produk diklik untuk melihat detail.
+* **`SizedBox`**: Saya gunakan secara ekstensif untuk memberikan jarak (spasi) antar elemen, misalnya antara gambar dan teks deskripsi.
+* **`ScaffoldMessenger`**: Untuk menampilkan `SnackBar` (pesan pop-up sementara) saat login berhasil atau gagal.

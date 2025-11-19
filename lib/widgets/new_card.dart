@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:monokotil_shop/screens/newlist_form.dart';
 import 'package:monokotil_shop/screens/menu.dart';
-
+import 'package:monokotil_shop/screens/list_product.dart';
 class ItemCard extends StatelessWidget {
   // Menampilkan kartu dengan ikon dan nama.
 
@@ -34,6 +34,16 @@ class ItemCard extends StatelessWidget {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (context) =>  ShopFormPage()),
+            );
+          }else if(item.name == "My Products"){
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) =>  ProductPage()),
+            );
+          }else if(item.name == "All Products"){
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) =>  ProductPage()),
             );
           }
         },
